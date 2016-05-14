@@ -320,6 +320,7 @@ def tensor_product_simp_Mul(e):
         return e
     elif e.has(TensorProduct):
 
+        nc_part = map(tensor_product_simp, nc_part)
         nc_s = []
         while nc_part:
             curr = nc_part.pop(0)
@@ -338,8 +339,9 @@ def tensor_product_simp_Mul(e):
                     )
                 for i in range(len(new_args)):
                     new_args[i] = new_args[i] * x.args[i]
+                curr = TensorProduct(*new_args)
 
-            nc_s.append(TensorProduct(*new_args))
+            nc_s.append(curr)
 
         return Mul(*c_part) * Mul(*nc_s)
     else:
