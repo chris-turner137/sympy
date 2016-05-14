@@ -319,31 +319,40 @@ def tensor_product_simp_Mul(e):
     if n_nc == 0 or n_nc == 1:
         return e
     elif e.has(TensorProduct):
-        current = nc_part[0]
-        if not isinstance(current, TensorProduct):
-            raise TypeError('TensorProduct expected, got: %r' % current)
-        n_terms = len(current.args)
-        new_args = list(current.args)
-        for next in nc_part[1:]:
-            # TODO: check the hilbert spaces of next and current here.
-            if isinstance(next, TensorProduct):
-                if n_terms != len(next.args):
+
+        nc_s = []
+        while nc_part:
+            curr = nc_part.pop(0)
+            n_terms = len(curr.args)
+            new_args = list(curr.args)
+
+            while (len(nc_part) and
+                   isinstance(curr, TensorProduct) and
+                   isinstance(nc_part[0], TensorProduct)):
+                x = nc_part.pop(0)
+                # TODO: check the hilbert spaces of next and current here.
+                if n_terms != len(x.args):
                     raise QuantumError(
                         'TensorProducts of different lengths: %r and %r' %
-                        (current, next)
+                        (curr, x)
                     )
                 for i in range(len(new_args)):
-                    new_args[i] = new_args[i] * next.args[i]
-            else:
-                # this won't quite work as we don't want next in the
-                # TensorProduct
-                for i in range(len(new_args)):
-                    new_args[i] = new_args[i] * next
-            current = next
-        return Mul(*c_part) * TensorProduct(*new_args)
+                    new_args[i] = new_args[i] * x.args[i]
+
+            nc_s.append(TensorProduct(*new_args))
+
+        return Mul(*c_part) * Mul(*nc_s)
     else:
         return e
 
+def tensor_product_simp_Pow(e):
+    """Simplify a Pow with TensorProducts."""
+    if not isinstance(e, Pow):
+        return e
+    base = tensor_product_simp(e.base)
+    if isinstance(base, TensorProduct):
+        return TensorProduct(*[factor ** e.exp for factor in base.args])
+    return base ** e.exp
 
 def tensor_product_simp(e, **hints):
     """Try to simplify and combine TensorProducts.
@@ -382,7 +391,7 @@ def tensor_product_simp(e, **hints):
     if isinstance(e, Add):
         return Add(*[tensor_product_simp(arg) for arg in e.args])
     elif isinstance(e, Pow):
-        return tensor_product_simp(e.base) ** e.exp
+        return tensor_product_simp_Pow(e)
     elif isinstance(e, Mul):
         return tensor_product_simp_Mul(e)
     elif isinstance(e, Commutator):

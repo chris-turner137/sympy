@@ -664,6 +664,9 @@ def qsimplify_pauli(e):
                 curr = Mul(*nc1)
                 c = c + c1
 
+            if isinstance(curr, TensorProduct):
+                curr = type(curr)(*(qsimplify_pauli(arg) for arg in curr.args))
+
             nc_s.append(curr)
 
         return Mul(*c) * Mul(*nc_s)
