@@ -3,6 +3,7 @@
 from sympy import I, Mul, Add, Pow, exp, Integer
 from sympy.physics.quantum import Operator, Ket, Bra
 from sympy.physics.quantum import ComplexSpace
+from sympy.physics.quantum import TensorProduct
 from sympy.matrices import Matrix
 from sympy.functions.special.tensor_functions import KroneckerDelta
 
@@ -640,7 +641,7 @@ def qsimplify_pauli(e):
     if isinstance(e, Operator):
         return e
 
-    if isinstance(e, (Add, Pow, exp)):
+    if isinstance(e, (Add, Pow, exp, TensorProduct)):
         t = type(e)
         return t(*(qsimplify_pauli(arg) for arg in e.args))
 
