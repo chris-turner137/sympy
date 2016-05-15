@@ -643,7 +643,7 @@ def qsimplify_pauli(e):
 
     if isinstance(e, (Add, Pow, exp, TensorProduct)):
         t = type(e)
-        return t(*(qsimplify_pauli(arg) for arg in e.args))
+        return t(*[qsimplify_pauli(arg) for arg in e.args])
 
     if isinstance(e, Mul):
 
@@ -651,23 +651,37 @@ def qsimplify_pauli(e):
 
         nc_s = []
         while nc:
-            curr = nc.pop(0)
+            if not isinstance(nc[0], SigmaOpBase):
+                curr = nc.pop(0)
 
-            while (len(nc) and
-                   isinstance(curr, SigmaOpBase) and
-                   isinstance(nc[0], SigmaOpBase) and
-                   curr.name == nc[0].name):
+                if isinstance(curr, TensorProduct):
+                  curr = TensorProduct(*(qsimplify_pauli(arg)
+                                         for arg in curr.args))
+                nc_s.append(curr)
+                continue
 
+            curr = [nc.pop(0)]
+            names = [curr[0].name]
+
+            while (len(nc) and isinstance(nc[0], SigmaOpBase)):
                 x = nc.pop(0)
-                y = _qsimplify_pauli_product(curr, x)
-                c1, nc1 = y.args_cnc()
-                curr = Mul(*nc1)
-                c = c + c1
+                if x.name in names:
+                    idx = names.index(x.name)
+                    y = _qsimplify_pauli_product(curr[idx], x)
+                    c1, nc1 = y.args_cnc()
+                    curr[idx] = Mul(*nc1)
+                    c = c + c1
+                else:
+                    curr.append(x)
+                    names.append(x.name)
 
-            if isinstance(curr, TensorProduct):
-                curr = type(curr)(*(qsimplify_pauli(arg) for arg in curr.args))
+            # TODO: Don't make assumptions about what the names are.
+            # TODO: This sorted order is properly part of a canonical form which
+            #       should be enforced and preserved elsewhere in the module.
+            curr = sorted(curr,
+                          key=lambda e: e.name if hasattr(e, 'name') else 0)
 
-            nc_s.append(curr)
+            nc_s.extend(curr)
 
         return Mul(*c) * Mul(*nc_s)
 
