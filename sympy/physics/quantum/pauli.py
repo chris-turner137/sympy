@@ -5,6 +5,8 @@ from sympy.physics.quantum import Operator, Ket, Bra
 from sympy.physics.quantum import ComplexSpace
 from sympy.physics.quantum import TensorProduct
 from sympy.matrices import Matrix
+from sympy.matrices.expressions import Identity
+from sympy.physics.quantum.matrixutils import matrix_tensor_product, matrix_eye
 from sympy.functions.special.tensor_functions import KroneckerDelta
 
 __all__ = [
@@ -101,8 +103,15 @@ class SigmaX(SigmaOpBase):
 
     def _represent_default_basis(self, **options):
         format = options.get('format', 'sympy')
+        size = options.get('size', None)
+        name = self.name
         if format == 'sympy':
-            return Matrix([[0, 1], [1, 0]])
+            if size is not None:
+                return matrix_tensor_product(matrix_eye(2**(self.name)),
+                                             Matrix([[0, 1], [1, 0]]),
+                                             matrix_eye(2**(size - self.name)))
+            else:
+                return Matrix([[0, 1], [1, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
@@ -171,8 +180,15 @@ class SigmaY(SigmaOpBase):
 
     def _represent_default_basis(self, **options):
         format = options.get('format', 'sympy')
+        size = options.get('size', 1)
+        name = self.name
         if format == 'sympy':
-            return Matrix([[0, -I], [I, 0]])
+            if size is not None:
+                return matrix_tensor_product(matrix_eye(2**(self.name)),
+                                             Matrix([[0, -I], [I, 0]]),
+                                             matrix_eye(2**(size - self.name)))
+            else:
+                return Matrix([[0, -I], [I, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
@@ -241,8 +257,15 @@ class SigmaZ(SigmaOpBase):
 
     def _represent_default_basis(self, **options):
         format = options.get('format', 'sympy')
+        size = options.get('size', 1)
+        name = self.name
         if format == 'sympy':
-            return Matrix([[1, 0], [0, -1]])
+            if size is not None:
+                return matrix_tensor_product(matrix_eye(2**(self.name)),
+                                             Matrix([[1, 0], [0, -1]]),
+                                             matrix_eye(2**(size - self.name)))
+            else:
+                return Matrix([[1, 0], [0, -1]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
@@ -325,8 +348,15 @@ class SigmaMinus(SigmaOpBase):
 
     def _represent_default_basis(self, **options):
         format = options.get('format', 'sympy')
+        size = options.get('size', 1)
+        name = self.name
         if format == 'sympy':
-            return Matrix([[0, 0], [1, 0]])
+            if size is not None:
+                return matrix_tensor_product(matrix_eye(2**(self.name)),
+                                             Matrix([[0, 0], [1, 0]]),
+                                             matrix_eye(2**(size - self.name)))
+            else:
+                return Matrix([[0, 0], [1, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
@@ -415,8 +445,15 @@ class SigmaPlus(SigmaOpBase):
 
     def _represent_default_basis(self, **options):
         format = options.get('format', 'sympy')
+        size = options.get('size', 1)
+        name = self.name
         if format == 'sympy':
-            return Matrix([[0, 1], [0, 0]])
+            if size is not None:
+                return matrix_tensor_product(matrix_eye(2**(self.name)),
+                                             Matrix([[0, 1], [0, 0]]),
+                                             matrix_eye(2**(size - self.name)))
+            else:
+                return Matrix([[0, 1], [0, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
@@ -484,7 +521,6 @@ class SigmaZKet(Ket):
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
-
 
 class SigmaZBra(Bra):
     """Bra for a two-level quantum system.
