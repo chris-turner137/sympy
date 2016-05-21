@@ -1,5 +1,7 @@
 """Pauli operators and states"""
-
+import numpy as np
+import scipy as sp
+import scipy.sparse
 from sympy import I, Mul, Add, Pow, exp, Integer
 from sympy.physics.quantum import Operator, Ket, Bra
 from sympy.physics.quantum import ComplexSpace
@@ -103,18 +105,26 @@ class SigmaX(SigmaOpBase):
 
     def _represent_default_basis(self, **options):
         format = options.get('format', 'sympy')
-        size = options.get('size', None)
+        size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            if size is not None:
-                return matrix_tensor_product(matrix_eye(2**(self.name)),
-                                             Matrix([[0, 1], [1, 0]]),
-                                             matrix_eye(2**(size - self.name)))
-            else:
-                return Matrix([[0, 1], [1, 0]])
+            eye = matrix_eye; kron = matrix_tensor_product
+            M = Matrix([[0, 1], [1, 0]])
+        elif format == 'numpy':
+            eye = np.eye; kron = np.kron
+            M = np.array([[0, 1], [1, 0]])
+        elif format == 'scipy.sparse':
+            eye = sp.sparse.eye; kron = sp.sparse.kron
+            M = np.array([[0, 1], [1, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
+
+        if size is not None:
+            return kron(kron(eye(2**(self.name-1)), M),
+                        eye(2**(size - self.name)))
+        else:
+            return M
 
 
 class SigmaY(SigmaOpBase):
@@ -183,16 +193,23 @@ class SigmaY(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            if size is not None:
-                return matrix_tensor_product(matrix_eye(2**(self.name)),
-                                             Matrix([[0, -I], [I, 0]]),
-                                             matrix_eye(2**(size - self.name)))
-            else:
-                return Matrix([[0, -I], [I, 0]])
+            eye = matrix_eye; kron = matrix_tensor_product
+            M = Matrix([[0, -I], [I, 0]])
+        elif format == 'numpy':
+            eye = np.eye; kron = np.kron
+            M = np.array([[0, -1j], [1j, 0]])
+        elif format == 'scipy.sparse':
+            eye = sp.sparse.eye; kron = sp.sparse.kron
+            M = np.array([[0, -1j], [1j, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
 
+        if size is not None:
+            return kron(kron(eye(2**(self.name-1)), M),
+                        eye(2**(size - self.name)))
+        else:
+            return M
 
 class SigmaZ(SigmaOpBase):
     """Pauli sigma z operator
@@ -260,16 +277,23 @@ class SigmaZ(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            if size is not None:
-                return matrix_tensor_product(matrix_eye(2**(self.name)),
-                                             Matrix([[1, 0], [0, -1]]),
-                                             matrix_eye(2**(size - self.name)))
-            else:
-                return Matrix([[1, 0], [0, -1]])
+            eye = matrix_eye; kron = matrix_tensor_product
+            M = Matrix([[1, 0], [0, -1]])
+        elif format == 'numpy':
+            eye = np.eye; kron = np.kron
+            M = np.array([[1, 0], [0, -1]])
+        elif format == 'scipy.sparse':
+            eye = sp.sparse.eye; kron = sp.sparse.kron
+            M = np.array([[1, 0], [0, -1]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
 
+        if size is not None:
+            return kron(kron(eye(2**(self.name-1)), M),
+                        eye(2**(size - self.name)))
+        else:
+            return M
 
 class SigmaMinus(SigmaOpBase):
     """Pauli sigma minus operator
@@ -351,16 +375,23 @@ class SigmaMinus(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            if size is not None:
-                return matrix_tensor_product(matrix_eye(2**(self.name)),
-                                             Matrix([[0, 0], [1, 0]]),
-                                             matrix_eye(2**(size - self.name)))
-            else:
-                return Matrix([[0, 0], [1, 0]])
+            eye = matrix_eye; kron = matrix_tensor_product
+            M = Matrix([[0, 0], [1, 0]])
+        elif format == 'numpy':
+            eye = np.eye; kron = np.kron
+            M = np.array([[0, 0], [1, 0]])
+        elif format == 'scipy.sparse':
+            eye = sp.sparse.eye; kron = sp.sparse.kron
+            M = np.array([[0, 0], [1, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
 
+        if size is not None:
+            return kron(kron(eye(2**(self.name-1)), M),
+                        eye(2**(size - self.name)))
+        else:
+            return M
 
 class SigmaPlus(SigmaOpBase):
     """Pauli sigma plus operator
@@ -448,15 +479,23 @@ class SigmaPlus(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            if size is not None:
-                return matrix_tensor_product(matrix_eye(2**(self.name)),
-                                             Matrix([[0, 1], [0, 0]]),
-                                             matrix_eye(2**(size - self.name)))
-            else:
-                return Matrix([[0, 1], [0, 0]])
+            eye = matrix_eye; kron = matrix_tensor_product
+            M = Matrix([[0, 1], [0, 0]])
+        elif format == 'numpy':
+            eye = np.eye; kron = np.kron
+            M = np.array([[0, 1], [0, 0]])
+        elif format == 'scipy.sparse':
+            eye = sp.sparse.eye; kron = sp.sparse.kron
+            M = np.array([[0, 1], [0, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
+
+        if size is not None:
+            return kron(kron(eye(2**(self.name-1)), M),
+                        eye(2**(size - self.name)))
+        else:
+            return M
 
 
 class SigmaZKet(Ket):
