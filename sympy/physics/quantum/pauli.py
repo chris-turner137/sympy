@@ -45,8 +45,8 @@ class SigmaX(SigmaOpBase):
     Parameters
     ==========
 
-    name : str
-        An optional string that labels the operator. Pauli operators with
+    name : int
+        An optional integer that labels the operator. Pauli operators with
         different names commute.
 
     Examples
@@ -133,8 +133,8 @@ class SigmaY(SigmaOpBase):
     Parameters
     ==========
 
-    name : str
-        An optional string that labels the operator. Pauli operators with
+    name : int
+        An optional integer that labels the operator. Pauli operators with
         different names commute.
 
     Examples
@@ -217,8 +217,8 @@ class SigmaZ(SigmaOpBase):
     Parameters
     ==========
 
-    name : str
-        An optional string that labels the operator. Pauli operators with
+    name : int
+        An optional integer that labels the operator. Pauli operators with
         different names commute.
 
     Examples
@@ -301,8 +301,8 @@ class SigmaMinus(SigmaOpBase):
     Parameters
     ==========
 
-    name : str
-        An optional string that labels the operator. Pauli operators with
+    name : int
+        An optional integer that labels the operator. Pauli operators with
         different names commute.
 
     Examples
@@ -399,8 +399,8 @@ class SigmaPlus(SigmaOpBase):
     Parameters
     ==========
 
-    name : str
-        An optional string that labels the operator. Pauli operators with
+    name : int
+        An optional integer that labels the operator. Pauli operators with
         different names commute.
 
     Examples

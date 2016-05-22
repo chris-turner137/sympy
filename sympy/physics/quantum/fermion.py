@@ -1,16 +1,18 @@
 """Fermionic quantum operators."""
 
 from sympy.core.compatibility import u
-from sympy import Integer
+from sympy import Mul, Add, Integer
+from sympy.core.function import expand
 from sympy.physics.quantum import Operator
 from sympy.physics.quantum import HilbertSpace, Ket, Bra
 from sympy.functions.special.tensor_functions import KroneckerDelta
-
+import bisect
 
 __all__ = [
     'FermionOp',
     'FermionFockKet',
-    'FermionFockBra'
+    'FermionFockBra',
+    'qsimplify_fermion'
 ]
 
 
@@ -20,8 +22,9 @@ class FermionOp(Operator):
     Parameters
     ==========
 
-    name : str
-        A string that labels the fermionic mode.
+    name : int
+        An optional integer that labels the fermionic mode. Fermionic operators
+        with different names anti-commute.
 
     annihilation : bool
         A bool that indicates if the fermionic operator is an annihilation
@@ -32,7 +35,7 @@ class FermionOp(Operator):
 
     >>> from sympy.physics.quantum import Dagger, AntiCommutator
     >>> from sympy.physics.quantum.fermion import FermionOp
-    >>> c = FermionOp("c")
+    >>> c = FermionOp()
     >>> AntiCommutator(c, Dagger(c)).doit()
     1
     """
@@ -46,7 +49,7 @@ class FermionOp(Operator):
 
     @classmethod
     def default_args(self):
-        return ("c", True)
+        return (0, True)
 
     def __new__(cls, *args, **hints):
         if not len(args) in [1, 2]:
@@ -87,19 +90,23 @@ class FermionOp(Operator):
         return Integer(0)
 
     def _eval_adjoint(self):
-        return FermionOp(str(self.name), not self.is_annihilation)
+        return FermionOp(self.name, not self.is_annihilation)
+
+    def _eval_power(self, e):
+        if e.is_Integer and e.is_positive:
+            return Integer(0)
 
     def _print_contents_latex(self, printer, *args):
         if self.is_annihilation:
-            return r'{%s}' % str(self.name)
+            return r'{c_{%s}}' % str(self.name)
         else:
-            return r'{{%s}^\dag}' % str(self.name)
+            return r'{c_{%s}^\dagger}' % str(self.name)
 
     def _print_contents(self, printer, *args):
         if self.is_annihilation:
-            return r'%s' % str(self.name)
+            return r'FermionOp(%s)' % str(self.name)
         else:
-            return r'Dagger(%s)' % str(self.name)
+            return r'Dagger(FermionOp(%s))' % str(self.name)
 
     def _print_contents_pretty(self, printer, *args):
         from sympy.printing.pretty.stringpict import prettyForm
@@ -177,3 +184,83 @@ class FermionFockBra(Bra):
     @classmethod
     def dual_class(self):
         return FermionFockKet
+
+def _qsimplify_fermion_product_site(e):
+    """
+    Assumes that all fermion operators have the same name.
+    """
+    work = [e]
+    out = []
+    while len(work):
+        e = work.pop()
+        if not isinstance(e, Mul):
+            out.append(e)
+            continue
+
+        c, nc = e.args_cnc()
+        ann = [f.is_annihilation for f in nc]
+
+        # Find the first inverted pair of operators
+        idx = next((i for i in range(len(ann)) if ann[i:i+2] == [True,False]), None)
+        if idx is None:
+            out.append(e)
+            continue
+
+        # Substitute the inverted pair for a cannonical subexpression
+        e = Mul(*c) * (Mul(*nc[:idx])
+                       * (Integer(1) - Mul(nc[idx+1],nc[idx]))
+                       * Mul(*nc[idx+2:]))
+
+        # Expand the new as a sum of fermion operator strings
+        e = expand(e)
+
+        # Recursive simplify
+        if isinstance(e, Add):
+            work.extend(e.args)
+        else:
+            work.append(e)
+    return Add(*out)
+
+def qsimplify_fermion(e, full=False):
+    if isinstance(e, Operator):
+        return e
+
+    if isinstance(e, (Add)):
+        t = type(e)
+        return t(*[qsimplify_fermion(arg, full=full) for arg in e.args])
+
+    if not isinstance(e, Mul):
+        return e
+
+    c, nc = e.args_cnc()
+
+    nc_s = []
+    while nc:
+        if not isinstance(nc[0], FermionOp):
+            nc_s.append(nc.pop(0))
+            continue
+
+        # Permute pauli strings into a name sorted order
+        ops = [nc.pop(0)]
+        names = [ops[0].name]
+        while (len(nc) and isinstance(nc[0], FermionOp)):
+            x = nc.pop(0)
+            idx = bisect.bisect_right(names, x.name)
+            sign = (-1)**(len(ops) - idx)
+            ops.insert(idx, x)
+            names.insert(idx, x.name)
+            c = c + [sign]
+
+        if full:
+            # Permute into normal order form
+            lo = 0
+            while len(names)-lo:
+                hi = bisect.bisect_right(names, names[lo], lo=lo)
+                xs = ops[lo:hi]
+                nc_s.append(_qsimplify_fermion_product_site(Mul(*xs)))
+                lo = hi
+
+        else:
+            nc_s.extend(ops)
+
+    return Mul(*c) * Mul(*nc_s)
