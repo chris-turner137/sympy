@@ -8,7 +8,7 @@ TODO:
 
 from __future__ import print_function, division
 
-from sympy import Add, Expr, I, integrate, Mul, Pow
+from sympy import Add, Expr, I, integrate, Mul, Pow, Number
 from sympy.physics.quantum.dagger import Dagger
 from sympy.physics.quantum.commutator import Commutator
 from sympy.physics.quantum.anticommutator import AntiCommutator
@@ -35,18 +35,34 @@ __all__ = [
 #-----------------------------------------------------------------------------
 
 
-def _sympy_to_scalar(e):
+def _sympy_to_scalar(e, format="numpy", size=1):
     """Convert from a sympy scalar to a Python scalar."""
-    if isinstance(e, Expr):
-        if e.is_Integer:
-            return int(e)
-        elif e.is_Float:
-            return float(e)
-        elif e.is_Rational:
-            return float(e)
-        elif e.is_Number or e.is_NumberSymbol or e == I:
-            return complex(e)
-    raise TypeError('Expected number, got: %r' % e)
+    import numpy as np
+    import scipy as sp
+    import scipy.sparse
+
+    if not isinstance(e, Expr):
+        raise TypeError('Expected number, got: %r' % e)
+    if e.is_Integer:
+        M = int(e)
+    elif e.is_Float:
+        M = float(e)
+    elif e.is_Rational:
+        M = float(e)
+    elif e.is_Number or e.is_NumberSymbol or e == I:
+        M = complex(e)
+    else:
+        raise TypeError('Expected number, got: %r' % e)
+
+    if size <= 1:
+        return M
+    else:
+        if format == 'numpy':
+            return np.matrix(M * np.eye(size))
+        elif format == 'scipy.sparse':
+            return np.aslinearoperator(M * sp.sparse.eye(size))
+        else:
+            raise ValueError('Unexpected format, got: %r' % e)
 
 
 def represent(expr, **options):
@@ -162,10 +178,17 @@ def represent(expr, **options):
             else:
                 raise NotImplementedError(strerr)
     elif isinstance(expr, Add):
-        result = represent(expr.args[0], **options)
+        if isinstance(expr.args[0], Number):
+            result = represent(expr.args[0], **dict(options, broadcast=True))
+        else:
+            result = represent(expr.args[0], **options)
         for args in expr.args[1:]:
             # scipy.sparse doesn't support += so we use plain = here.
-            result = result + represent(args, **options)
+            if isinstance(args, Number):
+                args = represent(args, **dict(options, broadcast=True))
+            else:
+                args = represent(args, **options)
+            result = result + args
         return result
     elif isinstance(expr, Pow):
         base, exp = expr.as_base_exp()
@@ -190,7 +213,11 @@ def represent(expr, **options):
     elif not (isinstance(expr, Mul) or isinstance(expr, OuterProduct)):
         # For numpy and scipy.sparse, we can only handle numerical prefactors.
         if format == 'numpy' or format == 'scipy.sparse':
-            return _sympy_to_scalar(expr)
+            if options.get('broadcast', False):
+                shape = options.get('shape', 1)
+            else:
+                shape = 1
+            return _sympy_to_scalar(expr, format, shape)
         return expr
 
     if not (isinstance(expr, Mul) or isinstance(expr, OuterProduct)):

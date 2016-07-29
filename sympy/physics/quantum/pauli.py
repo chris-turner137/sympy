@@ -108,23 +108,24 @@ class SigmaX(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            eye = matrix_eye; kron = matrix_tensor_product
+            eye = matrix_eye; kron = matrix_tensor_product; wrap = lambda x: x
             M = Matrix([[0, 1], [1, 0]])
         elif format == 'numpy':
-            eye = np.eye; kron = np.kron
+            eye = np.eye; kron = np.kron; wrap = np.matrix
             M = np.array([[0, 1], [1, 0]])
         elif format == 'scipy.sparse':
             eye = sp.sparse.eye; kron = sp.sparse.kron
+            wrap = sp.sparse.aslinearoperator
             M = np.array([[0, 1], [1, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
 
         if size is not None:
-            return kron(kron(eye(2**(self.name-1)), M),
-                        eye(2**(size - self.name)))
+            return wrap(kron(kron(eye(2**(self.name-1)), M),
+                             eye(2**(size - self.name))))
         else:
-            return M
+            return wrap(M)
 
 
 class SigmaY(SigmaOpBase):
@@ -193,23 +194,24 @@ class SigmaY(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            eye = matrix_eye; kron = matrix_tensor_product
+            eye = matrix_eye; kron = matrix_tensor_product; wrap = lambda x: x
             M = Matrix([[0, -I], [I, 0]])
         elif format == 'numpy':
-            eye = np.eye; kron = np.kron
+            eye = np.eye; kron = np.kron; wrap = np.matrix
             M = np.array([[0, -1j], [1j, 0]])
         elif format == 'scipy.sparse':
             eye = sp.sparse.eye; kron = sp.sparse.kron
+            wrap = sp.sparse.aslinearoperator
             M = np.array([[0, -1j], [1j, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
 
         if size is not None:
-            return kron(kron(eye(2**(self.name-1)), M),
-                        eye(2**(size - self.name)))
+            return wrap(kron(kron(eye(2**(self.name-1)), M),
+                                  eye(2**(size - self.name))))
         else:
-            return M
+            return wrap(M)
 
 class SigmaZ(SigmaOpBase):
     """Pauli sigma z operator
@@ -277,23 +279,24 @@ class SigmaZ(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            eye = matrix_eye; kron = matrix_tensor_product
+            eye = matrix_eye; kron = matrix_tensor_product; wrap = lambda x: x
             M = Matrix([[1, 0], [0, -1]])
         elif format == 'numpy':
-            eye = np.eye; kron = np.kron
+            eye = np.eye; kron = np.kron; wrap = np.matrix
             M = np.array([[1, 0], [0, -1]])
         elif format == 'scipy.sparse':
             eye = sp.sparse.eye; kron = sp.sparse.kron
+            wrap = sp.sparse.aslinearoperator
             M = np.array([[1, 0], [0, -1]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
 
         if size is not None:
-            return kron(kron(eye(2**(self.name-1)), M),
-                        eye(2**(size - self.name)))
+            return wrap(kron(kron(eye(2**(self.name-1)), M),
+                             eye(2**(size - self.name))))
         else:
-            return M
+            return wrap(M)
 
 class SigmaMinus(SigmaOpBase):
     """Pauli sigma minus operator
@@ -375,23 +378,24 @@ class SigmaMinus(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            eye = matrix_eye; kron = matrix_tensor_product
+            eye = matrix_eye; kron = matrix_tensor_product; wrap = lambda x: x
             M = Matrix([[0, 0], [1, 0]])
         elif format == 'numpy':
-            eye = np.eye; kron = np.kron
+            eye = np.eye; kron = np.kron; wrap = np.matrix
             M = np.array([[0, 0], [1, 0]])
         elif format == 'scipy.sparse':
             eye = sp.sparse.eye; kron = sp.sparse.kron
+            wrap = sp.sparse.aslinearoperator
             M = np.array([[0, 0], [1, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
 
         if size is not None:
-            return kron(kron(eye(2**(self.name-1)), M),
-                        eye(2**(size - self.name)))
+            return wrap(kron(kron(eye(2**(self.name-1)), M),
+                             eye(2**(size - self.name))))
         else:
-            return M
+            return wrap(M)
 
 class SigmaPlus(SigmaOpBase):
     """Pauli sigma plus operator
@@ -479,23 +483,24 @@ class SigmaPlus(SigmaOpBase):
         size = options.get('size', 1)
         name = self.name
         if format == 'sympy':
-            eye = matrix_eye; kron = matrix_tensor_product
+            eye = matrix_eye; kron = matrix_tensor_product; wrap = lambda x: x
             M = Matrix([[0, 1], [0, 0]])
         elif format == 'numpy':
-            eye = np.eye; kron = np.kron
+            eye = np.eye; kron = np.kron; wrap = np.matrix
             M = np.array([[0, 1], [0, 0]])
         elif format == 'scipy.sparse':
             eye = sp.sparse.eye; kron = sp.sparse.kron
+            wrap = sp.sparse.aslinearoperator
             M = np.array([[0, 1], [0, 0]])
         else:
             raise NotImplementedError('Representation in format ' +
                                       format + ' not implemented.')
 
         if size is not None:
-            return kron(kron(eye(2**(self.name-1)), M),
-                        eye(2**(size - self.name)))
+            return wrap(kron(kron(eye(2**(self.name-1)), M),
+                             eye(2**(size - self.name))))
         else:
-            return M
+            return wrap(M)
 
 
 class SigmaZKet(Ket):
