@@ -35,35 +35,18 @@ __all__ = [
 #-----------------------------------------------------------------------------
 
 
-def _sympy_to_scalar(e, format="numpy", size=1):
+def _sympy_to_scalar(e):
     """Convert from a sympy scalar to a Python scalar."""
-    import numpy as np
-    import scipy as sp
-    import scipy.sparse
-
-    if not isinstance(e, Expr):
-        raise TypeError('Expected number, got: %r' % e)
-    if e.is_Integer:
-        M = int(e)
-    elif e.is_Float:
-        M = float(e)
-    elif e.is_Rational:
-        M = float(e)
-    elif e.is_Number or e.is_NumberSymbol or e == I:
-        M = complex(e)
-    else:
-        raise TypeError('Expected number, got: %r' % e)
-
-    if size <= 1:
-        return M
-    else:
-        if format == 'numpy':
-            return np.matrix(M * np.eye(size))
-        elif format == 'scipy.sparse':
-            return np.aslinearoperator(M * sp.sparse.eye(size))
-        else:
-            raise ValueError('Unexpected format, got: %r' % e)
-
+    if isinstance(e, Expr):
+        if e.is_Integer:
+            return int(e)
+        elif e.is_Float:
+            return float(e)
+        elif e.is_Rational:
+            return float(e)
+        elif e.is_Number or e.is_NumberSymbol or e == I:
+            return complex(e)
+    raise TypeError('Expected number, got: %r' % e)
 
 def represent(expr, **options):
     """Represent the quantum expression in the given basis.
@@ -178,18 +161,33 @@ def represent(expr, **options):
             else:
                 raise NotImplementedError(strerr)
     elif isinstance(expr, Add):
-        if isinstance(expr.args[0], Number):
-            result = represent(expr.args[0], **dict(options, broadcast=True))
-        else:
-            result = represent(expr.args[0], **options)
-        for args in expr.args[1:]:
-            # scipy.sparse doesn't support += so we use plain = here.
-            if isinstance(args, Number):
-                args = represent(args, **dict(options, broadcast=True))
-            else:
-                args = represent(args, **options)
-            result = result + args
-        return result
+        rargs = [represent(arg, **options) for arg in expr.args]
+
+        if format == 'numpy':
+            import numpy as np
+
+            # Calculate the full shape
+            shapes = [np.asarray(np.asarray(rarg).shape) for rarg in rargs]
+            full_shape = np.array([1,1])
+            for shape in shapes[1:]:
+                if shape == ():
+                    continue
+                full_shape[0] = max(full_shape[0], shape[0])
+                full_shape[1] = max(full_shape[1], shape[1])
+
+            # Broadcast arrays up to full shape
+            rargs2 = []
+            for rarg, shape in zip(rargs, shapes):
+                if shape.size == 0:
+                    shape = np.array([1,1])
+                rem = full_shape/shape
+                rarg = np.kron(rarg, np.eye(rem[0], rem[1]))
+                rargs2.append(rarg)
+            rargs = rargs2
+        elif format == 'scipy.sparse':
+            raise NotImplementedError
+
+        return reduce(lambda x, y: x + y, rargs)
     elif isinstance(expr, Pow):
         base, exp = expr.as_base_exp()
         if format == 'numpy' or format == 'scipy.sparse':
@@ -213,11 +211,7 @@ def represent(expr, **options):
     elif not (isinstance(expr, Mul) or isinstance(expr, OuterProduct)):
         # For numpy and scipy.sparse, we can only handle numerical prefactors.
         if format == 'numpy' or format == 'scipy.sparse':
-            if options.get('broadcast', False):
-                shape = options.get('shape', 1)
-            else:
-                shape = 1
-            return _sympy_to_scalar(expr, format, shape)
+            return _sympy_to_scalar(expr)
         return expr
 
     if not (isinstance(expr, Mul) or isinstance(expr, OuterProduct)):
