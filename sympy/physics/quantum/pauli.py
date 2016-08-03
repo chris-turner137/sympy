@@ -97,7 +97,10 @@ class SigmaX(SigmaOpBase):
             return r'{\sigma_x}'
 
     def _print_contents(self, printer, *args):
-        return 'SigmaX()'
+        if self.use_name:
+            return 'SigmaX(%s)' % repr(self.name)
+        else:
+            return 'SigmaX()'
 
     def _eval_power(self, e):
         if e.is_Integer and e.is_positive:
@@ -183,7 +186,10 @@ class SigmaY(SigmaOpBase):
             return r'{\sigma_y}'
 
     def _print_contents(self, printer, *args):
-        return 'SigmaY()'
+        if self.use_name:
+            return 'SigmaY(%s)' % repr(self.name)
+        else:
+            return 'SigmaY()'
 
     def _eval_power(self, e):
         if e.is_Integer and e.is_positive:
@@ -268,7 +274,10 @@ class SigmaZ(SigmaOpBase):
             return r'{\sigma_z}'
 
     def _print_contents(self, printer, *args):
-        return 'SigmaZ()'
+        if self.use_name:
+            return 'SigmaZ(%s)' % repr(self.name)
+        else:
+            return 'SigmaZ()'
 
     def _eval_power(self, e):
         if e.is_Integer and e.is_positive:
@@ -371,7 +380,10 @@ class SigmaMinus(SigmaOpBase):
             return r'{\sigma_-}'
 
     def _print_contents(self, printer, *args):
-        return 'SigmaMinus()'
+        if self.use_name:
+            return 'SigmaMinus(%s)' % repr(self.name)
+        else:
+            return 'SigmaMinus()'
 
     def _represent_default_basis(self, **options):
         format = options.get('format', 'sympy')
@@ -476,7 +488,10 @@ class SigmaPlus(SigmaOpBase):
             return r'{\sigma_+}'
 
     def _print_contents(self, printer, *args):
-        return 'SigmaPlus()'
+        if self.use_name:
+            return 'SigmaPlus(%s)' % repr(self.name)
+        else:
+            return 'SigmaPlus()'
 
     def _represent_default_basis(self, **options):
         format = options.get('format', 'sympy')
