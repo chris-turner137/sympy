@@ -66,8 +66,10 @@ Here follows a list of possible assumption names:
         divisor other than ``1`` or the number itself.  See [4]_.
 
     zero
+        object has the value of ``0``.
+
     nonzero
-        object is zero (not zero).
+        object is a real number that is not zero.
 
     rational
         object can have only values from the set
@@ -187,6 +189,7 @@ _assume_rules = FactRules([
 
     'prime          ->  integer & positive',
     'composite      ->  integer & positive & !prime',
+    '!composite     ->  !positive | !even | prime',
 
     'irrational     ==  real & !rational',
 
@@ -212,7 +215,7 @@ class StdFactKB(FactKB):
     def __init__(self, facts=None):
         # save a copy of the facts dict
         if not facts:
-            self._generator = {};
+            self._generator = {}
         elif not isinstance(facts, FactKB):
             self._generator = facts.copy()
         else:

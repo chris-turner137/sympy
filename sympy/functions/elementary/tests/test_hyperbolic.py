@@ -1,6 +1,6 @@
 from sympy import symbols, Symbol, sinh, nan, oo, zoo, pi, asinh, acosh, log, sqrt, \
     coth, I, cot, E, tanh, tan, cosh, cos, S, sin, Rational, atanh, acoth, \
-    Integer, O, exp, sech, sec, csch, asech, acos, expand_mul
+    Integer, O, exp, sech, sec, csch, asech, acsch, acos, asin, expand_mul
 
 from sympy.utilities.pytest import raises
 
@@ -272,6 +272,8 @@ def test_coth():
 
     assert coth(k*pi*I) == -cot(k*pi)*I
 
+    assert coth(log(tan(2))) == coth(log(-tan(2)))
+    assert coth(1 + I*pi/2) == tanh(1)
 
 def test_coth_series():
     x = Symbol('x')
@@ -499,6 +501,11 @@ def test_acosh():
     assert str(acosh(-5*I).n(6)) == '2.31244 - 1.5708*I'
 
 
+def test_acosh_rewrite():
+    x = Symbol('x')
+    assert acosh(x).rewrite(log) == log(x + sqrt(x - 1)*sqrt(x + 1))
+
+
 def test_acosh_series():
     x = Symbol('x')
     assert acosh(x).series(x, 0, 8) == \
@@ -574,7 +581,76 @@ def test_asech_series():
 
 def test_asech_rewrite():
     x = Symbol('x')
-    assert asech(x).rewrite(log) == log(1/x + sqrt(1/x**2 - 1))
+    assert asech(x).rewrite(log) == log(1/x + sqrt(1/x - 1) * sqrt(1/x + 1))
+
+
+def test_acsch():
+    x = Symbol('x')
+
+    assert acsch(-x) == acsch(-x)
+    assert acsch(x) == -acsch(-x)
+
+    # values at fixed points
+    assert acsch(1) == log(1 + sqrt(2))
+    assert acsch(-1) == - log(1 + sqrt(2))
+    assert acsch(0) == zoo
+    assert acsch(2) == log((1+sqrt(5))/2)
+    assert acsch(-2) == - log((1+sqrt(5))/2)
+
+    assert acsch(I) == - I*pi/2
+    assert acsch(-I) == I*pi/2
+    assert acsch(-I*(sqrt(6) + sqrt(2))) == I*pi / 12
+    assert acsch(I*(sqrt(2) + sqrt(6))) == -I*pi / 12
+    assert acsch(-I*(1 + sqrt(5))) == I*pi / 10
+    assert acsch(I*(1 + sqrt(5))) == -I*pi / 10
+    assert acsch(-I*2 / sqrt(2 - sqrt(2))) == I*pi / 8
+    assert acsch(I*2 / sqrt(2 - sqrt(2))) == -I*pi / 8
+    assert acsch(-I*2) == I*pi / 6
+    assert acsch(I*2) == -I*pi / 6
+    assert acsch(-I*sqrt(2 + 2/sqrt(5))) == I*pi / 5
+    assert acsch(I*sqrt(2 + 2/sqrt(5))) == -I*pi / 5
+    assert acsch(-I*sqrt(2)) == I*pi / 4
+    assert acsch(I*sqrt(2)) == -I*pi / 4
+    assert acsch(-I*(sqrt(5)-1)) == 3*I*pi / 10
+    assert acsch(I*(sqrt(5)-1)) == -3*I*pi / 10
+    assert acsch(-I*2 / sqrt(3)) == I*pi / 3
+    assert acsch(I*2 / sqrt(3)) == -I*pi / 3
+    assert acsch(-I*2 / sqrt(2 + sqrt(2))) == 3*I*pi / 8
+    assert acsch(I*2 / sqrt(2 + sqrt(2))) == -3*I*pi / 8
+    assert acsch(-I*sqrt(2 - 2/sqrt(5))) == 2*I*pi / 5
+    assert acsch(I*sqrt(2 - 2/sqrt(5))) == -2*I*pi / 5
+    assert acsch(-I*(sqrt(6) - sqrt(2))) == 5*I*pi / 12
+    assert acsch(I*(sqrt(6) - sqrt(2))) == -5*I*pi / 12
+
+    # properties
+    # acsch(x) == asinh(1/x)
+    assert acsch(-I*sqrt(2)) == asinh(I/sqrt(2))
+    assert acsch(-I*2 / sqrt(3)) == asinh(I*sqrt(3) / 2)
+
+    # acsch(x) == -I*asin(I/x)
+    assert acsch(-I*sqrt(2)) == -I*asin(-1/sqrt(2))
+    assert acsch(-I*2 / sqrt(3)) == -I*asin(-sqrt(3)/2)
+
+    # csch(acsch(x)) / x == 1
+    assert expand_mul(csch(acsch(-I*(sqrt(6) + sqrt(2)))) / (-I*(sqrt(6) + sqrt(2)))) == 1
+    assert expand_mul(csch(acsch(I*(1 + sqrt(5)))) / ((I*(1 + sqrt(5))))) == 1
+    assert (csch(acsch(I*sqrt(2 - 2/sqrt(5)))) / (I*sqrt(2 - 2/sqrt(5)))).simplify() == 1
+    assert (csch(acsch(-I*sqrt(2 - 2/sqrt(5)))) / (-I*sqrt(2 - 2/sqrt(5)))).simplify() == 1
+
+    # numerical evaluation
+    assert str(acsch(5*I+1).n(6)) == '0.0391819 - 0.193363*I'
+    assert str(acsch(-5*I+1).n(6)) == '0.0391819 + 0.193363*I'
+
+
+def test_acsch_infinities():
+    assert acsch(oo) == 0
+    assert acsch(-oo) == 0
+    assert acsch(zoo) == 0
+
+
+def test_acsch_rewrite():
+    x = Symbol('x')
+    assert acsch(x).rewrite(log) == log(1/x + sqrt(1/x**2 + 1))
 
 
 def test_atanh():
@@ -612,6 +688,11 @@ def test_atanh():
     assert atanh(I*(2 - sqrt(3))) == pi*I/12
     assert atanh(I*(sqrt(3) - 2)) == -pi*I/12
     assert atanh(oo) == -I*pi/2
+
+
+def test_atanh_rewrite():
+    x = Symbol('x')
+    assert atanh(x).rewrite(log) == (log(1 + x) - log(1 - x)) / 2
 
 
 def test_atanh_series():
@@ -656,6 +737,11 @@ def test_acoth():
     assert acoth(I*(sqrt(3) - 2)) == 5*pi*I/12
 
 
+def test_acoth_rewrite():
+    x = Symbol('x')
+    assert acoth(x).rewrite(log) == (log(1 + 1/x) - log(1 - 1/x)) / 2
+
+
 def test_acoth_series():
     x = Symbol('x')
     assert acoth(x).series(x, 0, 10) == \
@@ -673,6 +759,7 @@ def test_inverses():
     assert atanh(x).inverse() == tanh
     assert acoth(x).inverse() == coth
     assert asech(x).inverse() == sech
+    assert acsch(x).inverse() == csch
 
 
 def test_leading_term():
@@ -833,6 +920,7 @@ def test_derivs():
     assert acosh(x).diff(x) == 1/sqrt(x**2 - 1)
     assert atanh(x).diff(x) == 1/(-x**2 + 1)
     assert asech(x).diff(x) == -1/(x*sqrt(1 - x**2))
+    assert acsch(x).diff(x) == -1/(x**2*sqrt(1 + x**(-2)))
 
 
 def test_sinh_expansion():

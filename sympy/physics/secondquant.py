@@ -435,6 +435,9 @@ class AnnihilateBoson(BosonicOperator, Annihilator):
     def __repr__(self):
         return "AnnihilateBoson(%s)" % self.state
 
+    def _latex(self, printer):
+        return "b_{%s}" % self.state.name
+
 
 class CreateBoson(BosonicOperator, Creator):
     """
@@ -470,6 +473,9 @@ class CreateBoson(BosonicOperator, Creator):
 
     def __repr__(self):
         return "CreateBoson(%s)" % self.state
+
+    def _latex(self, printer):
+        return "b^\\dagger_{%s}" % self.state.name
 
 B = AnnihilateBoson
 Bd = CreateBoson
@@ -2274,11 +2280,12 @@ def evaluate_deltas(e):
         for d in deltas:
             # If we do something, and there are more deltas, we should recurse
             # to treat the resulting expression properly
-            if indices[d.killable_index]:
+            if d.killable_index.is_Symbol and indices[d.killable_index]:
                 e = e.subs(d.killable_index, d.preferred_index)
                 if len(deltas) > 1:
                     return evaluate_deltas(e)
-            elif indices[d.preferred_index] and d.indices_contain_equal_information:
+            elif (d.preferred_index.is_Symbol and indices[d.preferred_index]
+                  and d.indices_contain_equal_information):
                 e = e.subs(d.preferred_index, d.killable_index)
                 if len(deltas) > 1:
                     return evaluate_deltas(e)
@@ -2638,8 +2645,8 @@ def _determine_ambiguous(term, ordered, ambiguous_groups):
         # handle this needs to be implemented.  In order to return something
         # useful nevertheless, we choose arbitrarily the first dummy and
         # determine the rest from this one.  This method is dependent on the
-        # actual dummy labels which violates an assumption for the canonization
-        # procedure.  A better implementation is needed.
+        # actual dummy labels which violates an assumption for the
+        # canonicalization procedure.  A better implementation is needed.
         group = [ d for d in ordered if d in ambiguous_groups[0] ]
         d = group[0]
         all_ordered.add(d)
