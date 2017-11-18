@@ -1,6 +1,5 @@
 """Fermionic quantum operators."""
 
-from sympy.core.compatibility import u
 from sympy import Mul, Add, Integer
 from sympy.core.function import expand
 from sympy.physics.quantum import Operator

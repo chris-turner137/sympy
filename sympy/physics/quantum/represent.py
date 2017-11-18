@@ -20,6 +20,7 @@ from sympy.physics.quantum.state import KetBase, BraBase, StateBase
 from sympy.physics.quantum.operator import Operator, OuterProduct
 from sympy.physics.quantum.qapply import qapply
 from sympy.physics.quantum.operatorset import operators_to_state, state_to_operators
+from functools import reduce
 
 __all__ = [
     'represent',
@@ -170,8 +171,10 @@ def represent(expr, **options):
             shapes = [np.asarray(np.asarray(rarg).shape) for rarg in rargs]
             full_shape = np.array([1,1])
             for shape in shapes[1:]:
-                if shape == ():
+                if shape.ndim == 0:
                     continue
+                elif shape.ndim == 1:
+                    shape = shape.reshape(max(shape.size,1),1)
                 full_shape[0] = max(full_shape[0], shape[0])
                 full_shape[1] = max(full_shape[1], shape[1])
 
@@ -180,7 +183,7 @@ def represent(expr, **options):
             for rarg, shape in zip(rargs, shapes):
                 if shape.size == 0:
                     shape = np.array([1,1])
-                rem = full_shape/shape
+                rem = full_shape//shape
                 rarg = np.kron(rarg, np.eye(rem[0], rem[1]))
                 rargs2.append(rarg)
             rargs = rargs2
